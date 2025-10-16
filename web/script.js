@@ -365,6 +365,16 @@ document.getElementById("btnRunChargesNow")?.addEventListener("click", async () 
   }
 });
 
+// Disparar as mensagens de cobrança pendente (vencimento hoje)
+document.getElementById("btnNotifyDueToday")?.addEventListener("click", async () => {
+  try {
+    const r = await api("/tasks/notify-due-charges", { method: "POST" });
+    alert(`Mensagens enviadas: ${r.sent ?? 0}`);
+  } catch (e) {
+    alert("Falha ao enviar mensagens: " + e.message);
+  }
+});
+
 // =======================
 // 🔹 Auto-load após login (com retry curto)
 // =======================

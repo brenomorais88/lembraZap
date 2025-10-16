@@ -10,6 +10,8 @@ import customersRoutes from "./src/routes/customers.js";
 import chargesRoutes from "./src/routes/charges.js";
 
 import { runCharges } from "./src/cron/autoCharges.js";
+import { runNotifyDueChargesForUid, runNotifyDueChargesAllUsers } from "./src/cron/notifyDueCharges.js";
+
 
 dotenv.config();
 
@@ -75,6 +77,15 @@ app.post("/tasks/run-charges", requireAuth, async (req, res) => {
   console.log("entrou no tasks/run-charges")
     await runCharges();
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.post("/tasks/notify-due-charges", requireAuth, async (req, res) => {
+  try {
+    const r = await runNotifyDueChargesForUid(req.user.uid);
+    res.json({ ok: true, ...r });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
