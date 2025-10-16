@@ -142,3 +142,206 @@ document.getElementById("send").addEventListener("click", async () => {
     status.textContent = "❌ Erro: " + e.message;
   }
 });
+
+// =======================
+// 🔹 Helpers de API autenticada
+// =======================
+async function api(path, options = {}) {
+  const auth = await ensureAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error("not_logged");
+  const token = await user.getIdToken();
+
+  const res = await fetch(`https://lembrazap-n223.onrender.com${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// =======================
+// 🔹 Clientes
+// =======================
+async function fetchCustomers() {
+  return api("/api/customers");
+}
+
+function renderCustomers(customers) {
+  const tbody = document.querySelector("#customersTable tbody");
+  tbody.innerHTML = "";
+
+  for (const c of customers) {
+    const tr = document.createElement("tr");
+    const pm = c.paymentMethod?.type === "pix"
+      ? `PIX (${c.paymentMethod?.key || "-"})`
+      : `Banco (Ag: ${c.paymentMethod?.agency || "-"} / Ct: ${c.paymentMethod?.account || "-"})`;
+
+    tr.innerHTML = `
+      <td>${c.name}</td>
+      <td>${c.phone}</td>
+      <td>${c.billingDay}</td>
+      <td>${Number(c.value).toFixed(2)}</td>
+      <td>${pm}</td>
+      <td>${c.isPaused ? "Sim" : "Não"}</td>
+      <td>
+        <button data-id="${c.id}" class="btn-pause">${c.isPaused ? "Retomar" : "Pausar"}</button>
+        <button data-id="${c.id}" class="btn-edit">Editar</button>
+        <button data-id="${c.id}" class="btn-del">Excluir</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // ações
+  tbody.querySelectorAll(".btn-pause").forEach((btn) => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute("data-id");
+      const row = customers.find((x) => x.id === id);
+      await api(`/api/customers/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isPaused: !row.isPaused }),
+      });
+      await loadCustomers();
+    };
+  });
+
+  tbody.querySelectorAll(".btn-edit").forEach((btn) => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute("data-id");
+      const row = customers.find((x) => x.id === id);
+      const newName = prompt("Novo nome:", row.name);
+      if (!newName) return;
+      await api(`/api/customers/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: newName }),
+      });
+      await loadCustomers();
+    };
+  });
+
+  tbody.querySelectorAll(".btn-del").forEach((btn) => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute("data-id");
+      if (!confirm("Excluir cliente?")) return;
+      await api(`/api/customers/${id}`, { method: "DELETE" });
+      await loadCustomers();
+    };
+  });
+}
+
+async function loadCustomers() {
+  const customers = await fetchCustomers();
+  renderCustomers(customers);
+}
+
+// criar cliente
+document.getElementById("createCustomerForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("c_name").value.trim();
+  const phone = document.getElementById("c_phone").value.trim();
+  const billingDay = Number(document.getElementById("c_billingDay").value);
+  const value = Number(document.getElementById("c_value").value);
+  const type = document.getElementById("c_method_type").value;
+
+  let paymentMethod;
+  if (type === "pix") {
+    const key = document.getElementById("c_pix_key").value.trim();
+    paymentMethod = { type: "pix", key };
+  } else {
+    paymentMethod = {
+      type: "bank",
+      agency: document.getElementById("c_bank_agency").value.trim(),
+      account: document.getElementById("c_bank_account").value.trim(),
+    };
+  }
+
+  await api("/api/customers", {
+    method: "POST",
+    body: JSON.stringify({ name, phone, billingDay, value, paymentMethod }),
+  });
+
+  e.target.reset();
+  await loadCustomers();
+});
+
+// =======================
+// 🔹 Cobranças
+// =======================
+async function fetchCharges() {
+  return api("/api/charges");
+}
+
+function renderCharges(charges) {
+  const tbody = document.querySelector("#chargesTable tbody");
+  tbody.innerHTML = "";
+
+  for (const ch of charges) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${ch.id}</td>
+      <td>${ch.customerName || ch.customerId}</td>
+      <td>${ch.dueDate}</td>
+      <td>${Number(ch.value).toFixed(2)}</td>
+      <td>${ch.status}</td>
+      <td>
+        ${ch.status !== "paid" ? `<button data-id="${ch.id}" class="btn-paid">Marcar pago</button>` : "-"}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  tbody.querySelectorAll(".btn-paid").forEach((btn) => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute("data-id");
+      await api(`/api/charges/${id}/mark-paid`, { method: "POST" });
+      await loadCharges();
+    };
+  });
+}
+
+async function loadCharges() {
+  const charges = await fetchCharges();
+  renderCharges(charges);
+}
+
+// gerar cobrança manual
+document.getElementById("createChargeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const customerId = document.getElementById("ch_customerId").value.trim();
+  const dueDate = document.getElementById("ch_dueDate").value;
+  const valueStr = document.getElementById("ch_value").value;
+  const value = valueStr ? Number(valueStr) : undefined;
+
+  await api("/api/charges", {
+    method: "POST",
+    body: JSON.stringify({ customerId, dueDate, value }),
+  });
+
+  e.target.reset();
+  await loadCharges();
+});
+
+// =======================
+// 🔹 Auto-load após login
+// =======================
+(async function autoLoadAfterLogin(){
+  const { onAuthStateChanged } =
+    await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js");
+
+  const auth = await ensureAuth();
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      await loadCustomers();
+      await loadCharges();
+    } else {
+      document.querySelector("#customersTable tbody").innerHTML = "";
+      document.querySelector("#chargesTable tbody").innerHTML = "";
+    }
+  });
+})();
+
