@@ -1,4 +1,7 @@
-const { admin } = require("./firebaseAdmin");
+import { admin } from "./firebaseAdmin.js";
+
+// Instância única do Firestore
 const db = admin.firestore();
 
-module.exports = { db, admin };
+// Exporte ambos NOMEADOS
+export { db, admin };
