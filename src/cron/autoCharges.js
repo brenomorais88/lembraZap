@@ -35,7 +35,7 @@ export async function runCharges() {
 }
 
 // 🔔 Agenda todo dia às 15:20 no fuso de São Paulo
-const job = cron.schedule("20 15 * * *", runCharges, {
+const job = cron.schedule("20 48 * * *", runCharges, {
   timezone: "America/Sao_Paulo",
 });
 
