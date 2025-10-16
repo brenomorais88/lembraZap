@@ -1,23 +1,20 @@
-const { db, admin } = require("../services/firestore");
+import { db, admin } from "../services/firestore.js";
 
-// Caminho base: users/{uid}/customers
-function colPath(uid) {
-  return `users/${uid}/customers`;
-}
+const colPath = (uid) => `users/${uid}/customers`;
 
-async function listCustomers(uid) {
+export async function listCustomers(uid) {
   const snap = await db.collection(colPath(uid)).orderBy("createdAt", "desc").get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-async function createCustomer(uid, data) {
+export async function createCustomer(uid, data) {
   const ref = db.collection(colPath(uid)).doc();
   await ref.set({
     name: data.name,
     phone: data.phone,
-    billingDay: data.billingDay,      // 1..31
-    value: data.value,                // number (ex.: 200)
-    paymentMethod: data.paymentMethod, // {type:'pix'|'bank', ...}
+    billingDay: Number(data.billingDay),
+    value: Number(data.value),
+    paymentMethod: data.paymentMethod,
     isPaused: !!data.isPaused,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -25,14 +22,13 @@ async function createCustomer(uid, data) {
   return { id: ref.id };
 }
 
-async function updateCustomer(uid, id, patch) {
-  const ref = db.doc(`${colPath(uid)}/${id}`);
-  const toUpdate = { ...patch, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
-  await ref.update(toUpdate);
+export async function updateCustomer(uid, id, patch) {
+  await db.doc(`${colPath(uid)}/${id}`).update({
+    ...patch,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
 }
 
-async function deleteCustomer(uid, id) {
+export async function deleteCustomer(uid, id) {
   await db.doc(`${colPath(uid)}/${id}`).delete();
 }
-
-module.exports = { listCustomers, createCustomer, updateCustomer, deleteCustomer };

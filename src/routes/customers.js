@@ -1,11 +1,12 @@
-const express = require("express");
-const router = express.Router();
-const {
+import { Router } from "express";
+import {
   listCustomers,
   createCustomer,
   updateCustomer,
   deleteCustomer,
-} = require("../models/customerModel");
+} from "../models/customerModel.js";
+
+const router = Router();
 
 // GET /api/customers
 router.get("/", async (req, res) => {
@@ -15,16 +16,18 @@ router.get("/", async (req, res) => {
 
 // POST /api/customers
 router.post("/", async (req, res) => {
+  console.log("📩 POST /api/customers", req.user?.uid, req.body);
   const { name, phone, billingDay, value, paymentMethod } = req.body;
-  if (!name || !phone || !billingDay || !value || !paymentMethod)
+  if (!name || !phone || !billingDay || !value || !paymentMethod) {
     return res.status(400).json({ error: "missing_fields" });
+  }
 
   const created = await createCustomer(req.user.uid, {
     name,
     phone,
     billingDay: Number(billingDay),
     value: Number(value),
-    paymentMethod,       // ex.: { type:'pix', key:'...' } ou { type:'bank', agency:'', account:'' }
+    paymentMethod, // { type: 'pix', key: '...' } ou { type:'bank', agency:'', account:'' }
     isPaused: false,
   });
   res.json(created);
@@ -42,4 +45,4 @@ router.delete("/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-export default router
+export default router;
