@@ -5,12 +5,51 @@ function ensureAuth(timeoutMs = 3000) {
     const started = Date.now();
     const id = setInterval(() => {
       if (window.fbAuth) { clearInterval(id); resolve(window.fbAuth); }
-      else if (Date.now() - started > timeoutMs) { clearInterval(id); reject(new Error("Firebase não carregou")); }
+      else if (Date.now() - started > timeoutMs) {
+        clearInterval(id);
+        reject(new Error("Firebase não carregou"));
+      }
     }, 100);
   });
 }
 
-// Cadastro
+// =======================
+// 🔹 Observa login automático e logout
+// =======================
+(async function setupAuthObserver() {
+  const { onAuthStateChanged, signOut } =
+    await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js");
+
+  const auth = await ensureAuth();
+
+  // Observa mudanças de login
+  onAuthStateChanged(auth, (user) => {
+    const authStatus = document.getElementById("authStatus");
+    const sendBtn = document.getElementById("send");
+
+    if (user) {
+      authStatus.textContent = `✅ Logado: ${user.email}`;
+      if (sendBtn) sendBtn.disabled = false;
+    } else {
+      authStatus.textContent = "⚠️ Não logado";
+      if (sendBtn) sendBtn.disabled = true;
+    }
+  });
+
+  // Logout
+  document.getElementById("logout").addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+      document.getElementById("authStatus").textContent = "👋 Você saiu";
+    } catch (e) {
+      document.getElementById("authStatus").textContent = "❌ Erro ao sair: " + e.message;
+    }
+  });
+})();
+
+// =======================
+// 🔹 Cadastro
+// =======================
 document.getElementById("signup").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const pass  = document.getElementById("password").value;
@@ -23,7 +62,7 @@ document.getElementById("signup").addEventListener("click", async () => {
 
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
 
-    // 🔹 salva no Firestore (coleção "users", doc com ID = uid)
+    // Salva no Firestore
     const uid = cred.user.uid;
     await window.dbSet(
       window.dbDoc(window.db, "users", uid),
@@ -42,7 +81,9 @@ document.getElementById("signup").addEventListener("click", async () => {
   }
 });
 
-// Login
+// =======================
+// 🔹 Login
+// =======================
 document.getElementById("login").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const pass  = document.getElementById("password").value;
@@ -56,10 +97,10 @@ document.getElementById("login").addEventListener("click", async () => {
     const cred = await signInWithEmailAndPassword(auth, email, pass);
 
     await window.dbSet(
-        window.dbDoc(window.db, "users", cred.user.uid),
-        { lastLoginAt: window.dbNow() },
-        { merge: true }
-     );
+      window.dbDoc(window.db, "users", cred.user.uid),
+      { lastLoginAt: window.dbNow() },
+      { merge: true }
+    );
 
     status.textContent = "✅ Logado com sucesso!";
   } catch (e) {
@@ -67,7 +108,9 @@ document.getElementById("login").addEventListener("click", async () => {
   }
 });
 
-// Enviar para o backend (Render)
+// =======================
+// 🔹 Enviar mensagem
+// =======================
 document.getElementById("send").addEventListener("click", async () => {
   const phone  = document.getElementById("phone").value;
   const msg    = document.getElementById("msg").value;
@@ -92,7 +135,9 @@ document.getElementById("send").addEventListener("click", async () => {
     });
 
     const data = await res.json();
-    status.textContent = data.success ? "✅ Enviado!" : "❌ Erro: " + (data.error || "falha no envio");
+    status.textContent = data.success
+      ? "✅ Enviado!"
+      : "❌ Erro: " + (data.error || "falha no envio");
   } catch (e) {
     status.textContent = "❌ Erro: " + e.message;
   }
