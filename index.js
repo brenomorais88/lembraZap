@@ -16,10 +16,11 @@ app.use(express.json());
 app.use(cors());
 
 // Nunca cachear respostas da API
-app.use((_, res, next) => {
+app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
+  res.setHeader("Vary", "Authorization"); // <-- MUITO IMPORTANTE
   next();
 });
 

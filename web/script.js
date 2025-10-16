@@ -258,8 +258,14 @@ function renderCustomers(customers) {
   });
 }
 
-async function loadCustomers() {
+async function loadCustomers(withRetry = true) {
   const customers = await fetchCustomers();
+  if (withRetry && (!customers || customers.length === 0)) {
+    await new Promise(r => setTimeout(r, 600));
+    const again = await fetchCustomers();
+    renderCustomers(again);
+    return;
+  }
   renderCustomers(customers);
 }
 
@@ -363,13 +369,20 @@ document.getElementById("createChargeForm").addEventListener("submit", async (e)
     if (!user) { clearTables(); return; }
 
     try {
-      await loadCustomers();
+      // força token fresco antes das primeiras chamadas
+      await user.getIdToken(true);
+      await loadCustomers(true);
       await loadCharges();
-    } catch {
+
+      // refresh tardio (2s) para cobrir “servidor frio”
+      setTimeout(() => loadCustomers(false), 2000);
+    } catch (e) {
+      console.error("Falha na carga inicial:", e);
+      // última tentativa
       setTimeout(async () => {
-        try { await loadCustomers(); await loadCharges(); }
-        catch (e2) { console.error("Falha ao carregar listas (2ª tentativa):", e2); }
-      }, 800);
+        try { await loadCustomers(true); await loadCharges(); }
+        catch (e2) { console.error("2ª falha na carga:", e2); }
+      }, 1000);
     }
   });
 })();

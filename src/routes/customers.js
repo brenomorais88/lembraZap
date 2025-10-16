@@ -11,6 +11,7 @@ const router = Router();
 // GET /api/customers
 router.get("/", async (req, res) => {
   const list = await listCustomers(req.user.uid);
+  console.log("GET /api/customers ->", list.length, "itens para uid", req.user.uid);
   res.json(list);
 });
 
