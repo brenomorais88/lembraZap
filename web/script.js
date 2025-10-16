@@ -21,8 +21,22 @@ document.getElementById("signup").addEventListener("click", async () => {
     const { createUserWithEmailAndPassword } =
       await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js");
 
-    await createUserWithEmailAndPassword(auth, email, pass);
-    status.textContent = "✅ Conta criada e logado com sucesso!";
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+
+    // 🔹 salva no Firestore (coleção "users", doc com ID = uid)
+    const uid = cred.user.uid;
+    await window.dbSet(
+      window.dbDoc(window.db, "users", uid),
+      {
+        email,
+        createdAt: window.dbNow(),
+        lastLoginAt: window.dbNow(),
+        plan: "free",
+      },
+      { merge: true }
+    );
+
+    status.textContent = "✅ Conta criada e salva no Firestore!";
   } catch (e) {
     status.textContent = "❌ Erro: " + e.message;
   }
@@ -39,7 +53,14 @@ document.getElementById("login").addEventListener("click", async () => {
     const { signInWithEmailAndPassword } =
       await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js");
 
-    await signInWithEmailAndPassword(auth, email, pass);
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+
+    await window.dbSet(
+        window.dbDoc(window.db, "users", cred.user.uid),
+        { lastLoginAt: window.dbNow() },
+        { merge: true }
+     );
+
     status.textContent = "✅ Logado com sucesso!";
   } catch (e) {
     status.textContent = "❌ Erro: " + e.message;
