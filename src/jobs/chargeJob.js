@@ -3,7 +3,7 @@ const { db } = require("../services/firestore");
 const { createCharge } = require("../models/chargeModel");
 
 // roda todo dia às 08:00 (timezone do container; simples)
-cron.schedule("0 8 * * *", async () => {
+cron.schedule("25 15 * * *", async () => {
   try {
     console.log("🕗 [cron] Gerando cobranças automáticas...");
     const usersSnap = await db.collection("users").get();
