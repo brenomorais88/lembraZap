@@ -1,10 +1,12 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { Twilio } from 'twilio';
+import cors from 'cors';
 
 dotenv.config();
 const app = express();
 app.use(express.json());
+app.use(cors({ origin: ['https://seu-front.netlify.app'] }));
 
 const client = new Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
@@ -22,4 +24,5 @@ app.post('/send', async (req, res) => {
   }
 });
 
-app.listen(process.env.PORT, () => console.log(`🚀 Running on port ${process.env.PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Running on ${PORT}`));
