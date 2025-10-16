@@ -1,7 +1,7 @@
 document.querySelector("#send").addEventListener("click", async () => {
   const phone = document.querySelector("#phone").value;
   const msg = document.querySelector("#msg").value;
-  const res = await fetch("http://localhost:3000/send", {
+  const res = await fetch("https://lembrazap-n223.onrender.com/send", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ to: phone, message: msg })
