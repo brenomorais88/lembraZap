@@ -15,16 +15,30 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// 🔒 Nunca cachear respostas da API
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
+
 // Twilio client
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-// Middleware simples para proteger rotas com Firebase Auth
+// Middleware de autenticação (aceita "Bearer <token>" ou token cru)
 async function requireAuth(req, res, next) {
   try {
-    const decoded = await verifyIdToken(req.headers.authorization);
+    const authHeader = req.headers.authorization || "";
+    let token = authHeader;
+    if (authHeader.startsWith("Bearer ")) token = authHeader.slice(7);
+    if (!token) return res.status(401).json({ error: "missing_token" });
+
+    const decoded = await verifyIdToken(token);
     req.user = { uid: decoded.uid, email: decoded.email || null };
     return next();
   } catch (e) {
+    console.error("Auth error:", e?.message || e);
     return res.status(401).json({ error: "unauthorized" });
   }
 }
@@ -46,16 +60,22 @@ app.post("/send", requireAuth, async (req, res) => {
     });
     return res.json({ success: true, sid: response.sid, user: req.user });
   } catch (e) {
+    console.error("Twilio error:", e?.message || e);
     return res.status(400).json({ success: false, error: e.message });
   }
 });
 
-// ✅ Monte as rotas REST de clientes e cobranças (protegidas)
+// ✅ Rotas REST (protegidas)
 app.use("/api/customers", requireAuth, customersRoutes);
 app.use("/api/charges", requireAuth, chargesRoutes);
 
-// (opcional) exponha logs simples p/ debug
-app.use((err, req, res, next) => {
+// 404 simples
+app.use((req, res, _next) => {
+  res.status(404).json({ error: "not_found" });
+});
+
+// Handler de erro
+app.use((err, req, res, _next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "internal_error" });
 });

@@ -120,12 +120,15 @@ document.getElementById("send").addEventListener("click", async () => {
       status.textContent = "⚠️ Faça login antes de enviar!";
       return;
     }
-    const token = await user.getIdToken();
+    const token = await user.getIdToken(true); // token fresco
 
-    const res = await fetch("https://lembrazap-n223.onrender.com/send", {
+    const res = await fetch("https://lembrazap-n223.onrender.com/send?_=" + Date.now(), {
       method: "POST",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        Pragma: "no-cache",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ to: phone, message: msg }),
@@ -141,22 +144,29 @@ document.getElementById("send").addEventListener("click", async () => {
 });
 
 // =======================
-// 🔹 Helpers de API autenticada
+// 🔹 Helpers de API autenticada (no-cache + token fresco + cache-busting)
 // =======================
 async function api(path, options = {}) {
   const auth = await ensureAuth();
   const user = auth.currentUser;
   if (!user) throw new Error("not_logged");
-  const token = await user.getIdToken();
 
-  const res = await fetch(`https://lembrazap-n223.onrender.com${path}`, {
+  const token = await user.getIdToken(true); // força renovar
+  const sep = path.includes("?") ? "&" : "?";
+  const url = `https://lembrazap-n223.onrender.com${path}${sep}_=${Date.now()}`;
+
+  const res = await fetch(url, {
+    cache: "no-store",
     ...options,
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
+      "Cache-Control": "no-store",
+      Pragma: "no-cache",
       Authorization: `Bearer ${token}`,
     },
   });
+
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -211,7 +221,7 @@ function renderCustomers(customers) {
     };
   });
 
-  // preencher formulário de cobrança manual
+  // preencher form de cobrança
   tbody.querySelectorAll(".btn-fill-charge").forEach((btn) => {
     btn.onclick = () => {
       const id = btn.dataset.id;
@@ -305,7 +315,7 @@ document.getElementById("createCustomerForm").addEventListener("submit", async (
     body: JSON.stringify({ name, phone, billingDay, value, paymentMethod }),
   });
 
-  // opcional: já preencher o form de cobrança com o novo ID
+  // já preencher o form de cobrança com o novo ID
   if (created?.id) {
     document.getElementById("ch_customerId").value = created.id;
     document.getElementById("ch_dueDate").value = new Date().toISOString().split("T")[0];
@@ -371,3 +381,36 @@ document.getElementById("createChargeForm").addEventListener("submit", async (e)
   e.target.reset();
   await loadCharges();
 });
+
+// =======================
+// 🔹 Auto-load após login (com retry)
+// =======================
+(async function autoLoadAfterLogin(){
+  const { onAuthStateChanged } =
+    await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js");
+
+  const auth = await ensureAuth();
+  onAuthStateChanged(auth, async (user) => {
+    const clearTables = () => {
+      document.querySelector("#customersTable tbody").innerHTML = "";
+      document.querySelector("#chargesTable tbody").innerHTML = "";
+    };
+
+    if (!user) { clearTables(); return; }
+
+    try {
+      await loadCustomers();
+      await loadCharges();
+    } catch (e) {
+      // servidor “frio”/token em propagação: tenta de novo rapidinho
+      setTimeout(async () => {
+        try {
+          await loadCustomers();
+          await loadCharges();
+        } catch (e2) {
+          console.error("Falha ao carregar listas (2ª tentativa):", e2);
+        }
+      }, 800);
+    }
+  });
+})();

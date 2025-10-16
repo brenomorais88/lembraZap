@@ -1,3 +1,4 @@
+// src/models/customerModel.js
 import { db, admin } from "../services/firestore.js";
 
 const colPath = (uid) => `users/${uid}/customers`;
@@ -16,7 +17,7 @@ export async function createCustomer(uid, data) {
     phone: data.phone,
     billingDay: Number(data.billingDay),
     value: Number(data.value),
-    paymentMethod: data.paymentMethod,       // { type:'pix', key } | { type:'bank', agency, account }
+    paymentMethod: data.paymentMethod, // { type:'pix', key } | { type:'bank', agency, account }
     isPaused: !!data.isPaused,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
