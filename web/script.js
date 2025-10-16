@@ -182,6 +182,7 @@ function renderCustomers(customers) {
       : `Banco (Ag: ${c.paymentMethod?.agency || "-"} / Ct: ${c.paymentMethod?.account || "-"})`;
 
     tr.innerHTML = `
+      <td>${c.id}</td>
       <td>${c.name}</td>
       <td>${c.phone}</td>
       <td>${c.billingDay}</td>
