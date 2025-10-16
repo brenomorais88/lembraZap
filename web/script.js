@@ -6,8 +6,7 @@ function ensureAuth(timeoutMs = 3000) {
     const id = setInterval(() => {
       if (window.fbAuth) { clearInterval(id); resolve(window.fbAuth); }
       else if (Date.now() - started > timeoutMs) {
-        clearInterval(id);
-        reject(new Error("Firebase não carregou"));
+        clearInterval(id); reject(new Error("Firebase não carregou"));
       }
     }, 100);
   });
@@ -25,7 +24,6 @@ function ensureAuth(timeoutMs = 3000) {
   onAuthStateChanged(auth, (user) => {
     const authStatus = document.getElementById("authStatus");
     const sendBtn = document.getElementById("send");
-
     if (user) {
       authStatus.textContent = `✅ Logado: ${user.email}`;
       if (sendBtn) sendBtn.disabled = false;
@@ -63,12 +61,7 @@ document.getElementById("signup").addEventListener("click", async () => {
     const uid = cred.user.uid;
     await window.dbSet(
       window.dbDoc(window.db, "users", uid),
-      {
-        email,
-        createdAt: window.dbNow(),
-        lastLoginAt: window.dbNow(),
-        plan: "free",
-      },
+      { email, createdAt: window.dbNow(), lastLoginAt: window.dbNow(), plan: "free" },
       { merge: true }
     );
 
@@ -106,7 +99,7 @@ document.getElementById("login").addEventListener("click", async () => {
 });
 
 // =======================
-// 🔹 Enviar mensagem
+// 🔹 Enviar mensagem (WhatsApp)
 // =======================
 document.getElementById("send").addEventListener("click", async () => {
   const phone  = document.getElementById("phone").value;
@@ -116,10 +109,8 @@ document.getElementById("send").addEventListener("click", async () => {
   try {
     const auth = await ensureAuth();
     const user = auth.currentUser;
-    if (!user) {
-      status.textContent = "⚠️ Faça login antes de enviar!";
-      return;
-    }
+    if (!user) { status.textContent = "⚠️ Faça login antes de enviar!"; return; }
+
     const token = await user.getIdToken(true); // token fresco
 
     const res = await fetch("https://lembrazap-n223.onrender.com/send?_=" + Date.now(), {
@@ -135,16 +126,14 @@ document.getElementById("send").addEventListener("click", async () => {
     });
 
     const data = await res.json();
-    status.textContent = data.success
-      ? "✅ Enviado!"
-      : "❌ Erro: " + (data.error || "falha no envio");
+    status.textContent = data.success ? "✅ Enviado!" : "❌ Erro: " + (data.error || "falha no envio");
   } catch (e) {
     status.textContent = "❌ Erro: " + e.message;
   }
 });
 
 // =======================
-// 🔹 Helpers de API autenticada (no-cache + token fresco + cache-busting)
+// 🔹 Helper API autenticada (no-cache + token fresco + cache-bust)
 // =======================
 async function api(path, options = {}) {
   const auth = await ensureAuth();
@@ -174,9 +163,7 @@ async function api(path, options = {}) {
 // =======================
 // 🔹 Clientes
 // =======================
-async function fetchCustomers() {
-  return api("/api/customers");
-}
+async function fetchCustomers() { return api("/api/customers"); }
 
 function renderCustomers(customers) {
   const tbody = document.querySelector("#customersTable tbody");
@@ -212,12 +199,8 @@ function renderCustomers(customers) {
   tbody.querySelectorAll(".btn-id").forEach((btn) => {
     btn.onclick = async () => {
       const id = btn.dataset.id;
-      try {
-        await navigator.clipboard.writeText(id);
-        alert("ID copiado!");
-      } catch {
-        alert("Falha ao copiar. ID: " + id);
-      }
+      try { await navigator.clipboard.writeText(id); alert("ID copiado!"); }
+      catch { alert("Falha ao copiar. ID: " + id); }
     };
   });
 
@@ -237,10 +220,7 @@ function renderCustomers(customers) {
     btn.onclick = async () => {
       const customerId = btn.dataset.id;
       const dueDate = new Date().toISOString().split("T")[0];
-      await api("/api/charges", {
-        method: "POST",
-        body: JSON.stringify({ customerId, dueDate }),
-      });
+      await api("/api/charges", { method: "POST", body: JSON.stringify({ customerId, dueDate }) });
       await loadCharges();
     };
   });
@@ -250,10 +230,7 @@ function renderCustomers(customers) {
     btn.onclick = async () => {
       const id = btn.getAttribute("data-id");
       const row = customers.find((x) => x.id === id);
-      await api(`/api/customers/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ isPaused: !row.isPaused }),
-      });
+      await api(`/api/customers/${id}`, { method: "PATCH", body: JSON.stringify({ isPaused: !row.isPaused }) });
       await loadCustomers();
     };
   });
@@ -265,10 +242,7 @@ function renderCustomers(customers) {
       const row = customers.find((x) => x.id === id);
       const newName = prompt("Novo nome:", row.name);
       if (!newName) return;
-      await api(`/api/customers/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ name: newName }),
-      });
+      await api(`/api/customers/${id}`, { method: "PATCH", body: JSON.stringify({ name: newName }) });
       await loadCustomers();
     };
   });
@@ -315,7 +289,6 @@ document.getElementById("createCustomerForm").addEventListener("submit", async (
     body: JSON.stringify({ name, phone, billingDay, value, paymentMethod }),
   });
 
-  // já preencher o form de cobrança com o novo ID
   if (created?.id) {
     document.getElementById("ch_customerId").value = created.id;
     document.getElementById("ch_dueDate").value = new Date().toISOString().split("T")[0];
@@ -328,14 +301,11 @@ document.getElementById("createCustomerForm").addEventListener("submit", async (
 // =======================
 // 🔹 Cobranças
 // =======================
-async function fetchCharges() {
-  return api("/api/charges");
-}
+async function fetchCharges() { return api("/api/charges"); }
 
 function renderCharges(charges) {
   const tbody = document.querySelector("#chargesTable tbody");
   tbody.innerHTML = "";
-
   for (const ch of charges) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -344,9 +314,7 @@ function renderCharges(charges) {
       <td>${ch.dueDate}</td>
       <td>${Number(ch.value).toFixed(2)}</td>
       <td>${ch.status}</td>
-      <td>
-        ${ch.status !== "paid" ? `<button data-id="${ch.id}" class="btn-paid">Marcar pago</button>` : "-"}
-      </td>
+      <td>${ch.status !== "paid" ? `<button data-id="${ch.id}" class="btn-paid">Marcar pago</button>` : "-"}</td>
     `;
     tbody.appendChild(tr);
   }
@@ -373,17 +341,13 @@ document.getElementById("createChargeForm").addEventListener("submit", async (e)
   const valueStr = document.getElementById("ch_value").value;
   const value = valueStr ? Number(valueStr) : undefined;
 
-  await api("/api/charges", {
-    method: "POST",
-    body: JSON.stringify({ customerId, dueDate, value }),
-  });
-
+  await api("/api/charges", { method: "POST", body: JSON.stringify({ customerId, dueDate, value }) });
   e.target.reset();
   await loadCharges();
 });
 
 // =======================
-// 🔹 Auto-load após login (com retry)
+// 🔹 Auto-load após login (com retry curto)
 // =======================
 (async function autoLoadAfterLogin(){
   const { onAuthStateChanged } =
@@ -401,15 +365,10 @@ document.getElementById("createChargeForm").addEventListener("submit", async (e)
     try {
       await loadCustomers();
       await loadCharges();
-    } catch (e) {
-      // servidor “frio”/token em propagação: tenta de novo rapidinho
+    } catch {
       setTimeout(async () => {
-        try {
-          await loadCustomers();
-          await loadCharges();
-        } catch (e2) {
-          console.error("Falha ao carregar listas (2ª tentativa):", e2);
-        }
+        try { await loadCustomers(); await loadCharges(); }
+        catch (e2) { console.error("Falha ao carregar listas (2ª tentativa):", e2); }
       }, 800);
     }
   });

@@ -1,21 +1,23 @@
+// src/services/firebaseAdmin.js
 import admin from "firebase-admin";
 
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
-      projectId:  process.env.FIREBASE_PROJECT_ID,
+      projectId:   process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // Render envia com "\n" escapado; convertemos para quebras reais:
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      // Render envia \n escapado; converte para quebras reais
+      privateKey:  process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     }),
   });
 }
 
-// Exporta o admin (NOMEADO) e o helper de verificação
-export async function verifyIdToken(authorizationHeader) {
-  const token = authorizationHeader?.startsWith("Bearer ")
-    ? authorizationHeader.slice(7)
-    : null;
+/**
+ * Aceita tanto "Bearer <token>" quanto "<token>".
+ */
+export async function verifyIdToken(authorizationHeaderOrToken = "") {
+  const raw = String(authorizationHeaderOrToken || "");
+  const token = raw.startsWith("Bearer ") ? raw.slice(7) : raw; // <-- aceita os dois
   if (!token) throw new Error("missing_token");
   return admin.auth().verifyIdToken(token);
 }
