@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LembraZap</title>
+
+    <!-- Design system reutilizável -->
+    <link rel="stylesheet" href="./assets/css/ui.css" />
+    <!-- Estilos específicos desta tela -->
+    <link rel="stylesheet" href="./assets/css/admin.css" />
+
+    <!-- Firebase -->
+    <script type="module" src="assets/js/firebase.js?v=11"></script>
+    <!-- Lógica -->
+    <script defer src="assets/js/script.js?v=11"></script>
+</head>
+<body class="bg-app">
+<!-- Header -->
+<header class="app-header">
+    <div class="brand">
+        <img class="brand-logo" src="./assets/img/logo.png" alt="LembraZap" />
+        <span class="brand-name">LembraZap</span>
+    </div>
+    <nav class="header-actions">
+        <button id="logout" class="btn btn-outline">Sair</button>
+    </nav>
+</header>
+
+<!-- Conteúdo -->
+<main class="app-shell">
+    <!-- Autenticação -->
+    <section class="card">
+        <h2 class="section-title">Login / Cadastro</h2>
+        <form class="grid-2 stack-16" onsubmit="return false">
+            <label class="field">
+                <span class="label">E-mail</span>
+                <input class="input" id="email" type="email" placeholder="seuemail@exemplo.com" autocomplete="username" />
+            </label>
+
+            <label class="field">
+                <span class="label">Senha</span>
+                <input class="input" id="password" type="password" placeholder="Sua senha" autocomplete="current-password" />
+            </label>
+
+            <div class="actions">
+                <button id="signup" class="btn btn-secondary">Criar conta</button>
+                <button id="login" class="btn btn-primary">Entrar</button>
+            </div>
+
+            <p id="authStatus" class="muted"></p>
+        </form>
+    </section>
+
+    <!-- WhatsApp -->
+    <section class="card">
+        <h2 class="section-title">Enviar mensagem no WhatsApp</h2>
+        <form class="grid-2 stack-16" onsubmit="return false">
+            <label class="field">
+                <span class="label">Telefone</span>
+                <input class="input" id="phone" placeholder="+55 11 98765-4321" />
+            </label>
+
+            <label class="field grid-span-2">
+                <span class="label">Mensagem</span>
+                <input class="input" id="msg" placeholder="Sua mensagem" />
+            </label>
+
+            <div class="actions">
+                <button id="send" class="btn btn-primary">Enviar</button>
+            </div>
+
+            <p id="status" class="muted"></p>
+        </form>
+    </section>
+
+    <!-- Clientes -->
+    <section class="card">
+        <h2 class="section-title">Clientes</h2>
+
+        <form id="createCustomerForm" class="grid-4 stack-16">
+            <label class="field grid-span-2">
+                <span class="label">Nome</span>
+                <input class="input" id="c_name" required placeholder="Nome completo" />
+            </label>
+
+            <label class="field">
+                <span class="label">Telefone</span>
+                <input class="input" id="c_phone" required placeholder="+55 11 99999-9999" />
+            </label>
+
+            <label class="field">
+                <span class="label">Dia de cobrança</span>
+                <input class="input" id="c_billingDay" type="number" min="1" max="31" required placeholder="1..31" />
+            </label>
+
+            <label class="field">
+                <span class="label">Valor (R$)</span>
+                <input class="input" id="c_value" type="number" step="0.01" required placeholder="200.00" />
+            </label>
+
+            <label class="field">
+                <span class="label">Forma</span>
+                <select class="input" id="c_method_type">
+                    <option value="pix">PIX</option>
+                    <option value="bank">Banco</option>
+                </select>
+            </label>
+
+            <label class="field grid-span-2">
+                <span class="label">Chave PIX</span>
+                <input class="input" id="c_pix_key" placeholder="Se forma = PIX" />
+            </label>
+
+            <label class="field">
+                <span class="label">Agência</span>
+                <input class="input" id="c_bank_agency" placeholder="Se forma = Banco" />
+            </label>
+
+            <label class="field">
+                <span class="label">Conta</span>
+                <input class="input" id="c_bank_account" placeholder="Se forma = Banco" />
+            </label>
+
+            <div class="actions grid-span-4">
+                <button type="submit" class="btn btn-primary">Criar cliente</button>
+            </div>
+        </form>
+
+        <div class="table-wrap">
+            <table id="customersTable" class="table">
+                <thead>
+                <tr>
+                    <th>ID</th><th>Nome</th><th>Telefone</th><th>Dia</th><th>Valor</th><th>Forma</th><th>Pausado</th><th>Ações</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Cobranças -->
+    <section class="card">
+        <h2 class="section-title">Cobranças</h2>
+
+        <div class="toolbar">
+            <button id="btnRunChargesNow" class="btn btn-outline">Gerar cobranças automáticas (agora)</button>
+        </div>
+
+        <form id="createChargeForm" class="grid-4 stack-16">
+            <label class="field">
+                <span class="label">ID do cliente</span>
+                <input class="input" id="ch_customerId" required placeholder="ex.: abc123" />
+            </label>
+
+            <label class="field">
+                <span class="label">Vencimento</span>
+                <input class="input" id="ch_dueDate" type="date" required />
+            </label>
+
+            <label class="field">
+                <span class="label">Valor (opcional)</span>
+                <input class="input" id="ch_value" type="number" step="0.01" placeholder="200.00" />
+            </label>
+
+            <div class="actions">
+                <button type="submit" class="btn btn-primary">Gerar cobrança (manual)</button>
+            </div>
+        </form>
+
+        <div class="table-wrap">
+            <table id="chargesTable" class="table">
+                <thead>
+                <tr>
+                    <th>ID</th><th>Cliente</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Disparos -->
+    <section class="card">
+        <h2 class="section-title">Disparar cobranças</h2>
+        <div class="toolbar">
+            <button id="btnNotifyDueToday" class="btn btn-secondary">Enviar WhatsApp para cobranças que vencem hoje</button>
+        </div>
+    </section>
+</main>
+</body>
+</html>

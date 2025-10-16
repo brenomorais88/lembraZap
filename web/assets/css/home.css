@@ -1,0 +1,56 @@
+/* ====== Estilos da Home ====== */
+
+.home-hero {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+}
+
+.brand-logo{ width:28px; height:28px; }
+
+.hero-content {
+  max-width: 500px;
+  text-align: center;
+  padding: 48px 40px;
+}
+
+.hero-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  color: var(--color-muted);
+  margin-bottom: 28px;
+}
+
+.cta-group {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Rodapé */
+.app-footer {
+  text-align: center;
+  padding: 20px;
+  background: var(--color-card);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 24px;
+  }
+  .hero-content {
+    padding: 32px 24px;
+  }
+}

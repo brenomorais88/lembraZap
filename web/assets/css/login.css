@@ -1,0 +1,33 @@
+/* Layout do cartão de login */
+.login-card{
+  width: 380px;
+  max-width: 100%;
+}
+
+/* Logo + título */
+.logo-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.logo-img{
+  width:150px; height:100px; display:block;
+}
+.logo-title{
+  margin:0;
+  font-size:24px;
+  font-weight:700;
+  letter-spacing:.2px;
+  color:#333;
+}
+
+/* Parágrafo final */
+.login-card .muted{ margin-top: 12px; }
+
+/* Mobile fino */
+@media (max-width: 360px){
+  .logo-title{ font-size: 22px; }
+  .logo-img{ width:150px; height:100px; }
+}

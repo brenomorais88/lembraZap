@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entrar — LembraZap</title>
+
+    <!-- Base global do projeto (se existir) -->
+    <!-- <link rel="stylesheet" href="./assets/css/styles.css" /> -->
+
+    <!-- Design system reutilizável -->
+    <link rel="stylesheet" href="./assets/css/ui.css" />
+    <!-- Ajustes específicos da página -->
+    <link rel="stylesheet" href="./assets/css/login.css" />
+</head>
+<body class="center-screen bg-app">
+<main class="card login-card">
+    <header class="logo-row">
+        <img src="./assets/img/logo.png" alt="Logo LembraZap" class="logo-img" />
+    </header>
+
+    <form id="loginForm" novalidate class="stack-16">
+        <label class="field">
+            <span class="label">E-mail</span>
+            <input class="input" type="email" id="email" name="email"
+                   placeholder="exemplo@email.com"
+                   autocomplete="username" required />
+        </label>
+
+        <label class="field">
+            <span class="label">Senha</span>
+            <input class="input" type="password" id="password" name="password"
+                   autocomplete="current-password" required minlength="6" />
+        </label>
+
+        <label class="checkbox">
+            <input type="checkbox" id="remember" />
+            <span>Lembrar de mim</span>
+        </label>
+
+        <button class="btn btn-primary w-100" type="submit">Entrar</button>
+
+        <p class="muted center">
+            Não tem conta? <a class="link" href="./cadastro.html">Cadastre-se</a>
+        </p>
+    </form>
+</main>
+
+<script src="./assets/js/main.js" defer></script>
+<script>
+    function handleFakeLogin({ email, password, remember }) {
+      if (!email || !password) return { ok: false, message: "Preencha e-mail e senha." };
+      if (password.length < 6) return { ok: false, message: "Senha deve ter pelo menos 6 caracteres." };
+      const user = { email, token: "fake-jwt-token" };
+      (remember ? localStorage : sessionStorage).setItem("auth", JSON.stringify(user));
+      return { ok: true };
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const remember = document.getElementById("remember").checked;
+      const res = handleFakeLogin({ email, password, remember });
+      if (!res.ok) return alert(res.message);
+      window.location.href = "./index.html";
+    });
+</script>
+</body>
+</html>
