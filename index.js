@@ -5,6 +5,10 @@ import cors from "cors";
 import twilio from "twilio";
 import { verifyIdToken } from "./src/services/firebaseAdmin.js";
 
+// 👉 importe as rotas
+import customersRoutes from "./src/routes/customers.js";
+import chargesRoutes from "./src/routes/charges.js";
+
 dotenv.config();
 
 const app = express();
@@ -31,11 +35,9 @@ app.get("/health", (_, res) => res.json({ ok: true }));
 // Protege /send com Firebase Auth
 app.post("/send", requireAuth, async (req, res) => {
   const { to, message } = req.body;
-
   if (!to || !message) {
     return res.status(400).json({ success: false, error: "missing_to_or_message" });
   }
-
   try {
     const response = await client.messages.create({
       from: process.env.TWILIO_WHATSAPP_FROM, // ex.: 'whatsapp:+14155238886'
@@ -48,11 +50,15 @@ app.post("/send", requireAuth, async (req, res) => {
   }
 });
 
-// (no futuro) monte aqui as rotas REST de clientes e cobranças:
-// import customersRoutes from "./src/routes/customers.js";
-// import chargesRoutes from "./src/routes/charges.js";
-// app.use("/api/customers", requireAuth, customersRoutes);
-// app.use("/api/charges", requireAuth, chargesRoutes);
+// ✅ Monte as rotas REST de clientes e cobranças (protegidas)
+app.use("/api/customers", requireAuth, customersRoutes);
+app.use("/api/charges", requireAuth, chargesRoutes);
+
+// (opcional) exponha logs simples p/ debug
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: "internal_error" });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Running on port ${PORT}`));
