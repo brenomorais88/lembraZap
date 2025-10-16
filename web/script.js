@@ -356,6 +356,7 @@ document.getElementById("createChargeForm").addEventListener("submit", async (e)
 document.getElementById("btnRunChargesNow")?.addEventListener("click", async () => {
   try {
     // usa o helper api() que já manda o token
+    console.log("btnRunChargesNow click")
     await api("/tasks/run-charges", { method: "POST" });
     alert("Cobranças geradas (veja a lista e os logs).");
     await loadCharges();

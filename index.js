@@ -72,6 +72,7 @@ app.use("/api/charges",   requireAuth, chargesRoutes);
 // ✅ Endpoint para disparar manualmente as cobranças
 app.post("/tasks/run-charges", requireAuth, async (req, res) => {
   try {
+  console.log("entrou no tasks/run-charges")
     await runCharges();
     res.json({ ok: true });
   } catch (e) {
