@@ -1,3 +1,20 @@
+/* Cabeçalho */
+.app-header{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+}
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand-logo{ width:28px; height:28px; }
+.brand-name{ font-weight:700; }
+
+
 /* ====== Estilos da Home ====== */
 
 .home-hero {
@@ -8,8 +25,6 @@
   padding: 40px 20px;
   background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
 }
-
-.brand-logo{ width:28px; height:28px; }
 
 .hero-content {
   max-width: 500px;
