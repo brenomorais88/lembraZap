@@ -1,12 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
+    <meta charset="UTF-8" />
     <title>LembraZap</title>
+
+    <!-- 1) Carrega o módulo do Firebase (deixa window.fbAuth pronto) -->
+    <script type="module" src="firebase.js"></script>
+
+    <!-- 2) Seu script da página -->
     <script defer src="script.js"></script>
 </head>
 <body>
-<h2>Enviar mensagem no WhatsApp</h2>
-<input id="phone" placeholder="+5511981797687" />
+<h1>LembraZap</h1>
+
+<h3>Login / Cadastro</h3>
+<input id="email" placeholder="Seu e-mail" type="email" />
+<input id="password" placeholder="Sua senha" type="password" />
+<button id="signup">Criar conta</button>
+<button id="login">Entrar</button>
+<p id="authStatus"></p>
+
+<hr />
+
+<h3>Enviar mensagem no WhatsApp</h3>
+<input id="phone" placeholder="+5511987654321" />
 <input id="msg" placeholder="Sua mensagem" />
 <button id="send">Enviar</button>
 <p id="status"></p>
