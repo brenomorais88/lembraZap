@@ -9,6 +9,8 @@ import { verifyIdToken } from "./src/services/firebaseAdmin.js";
 import customersRoutes from "./src/routes/customers.js";
 import chargesRoutes from "./src/routes/charges.js";
 
+import { runCharges } from "./src/cron/autoCharges.js";
+
 dotenv.config();
 
 const app = express();
@@ -66,6 +68,16 @@ app.post("/send", requireAuth, async (req, res) => {
 // Rotas REST protegidas
 app.use("/api/customers", requireAuth, customersRoutes);
 app.use("/api/charges",   requireAuth, chargesRoutes);
+
+// ✅ Endpoint para disparar manualmente as cobranças
+app.post("/tasks/run-charges", requireAuth, async (req, res) => {
+  try {
+    await runCharges();
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
 
 // 404
 app.use((req, res) => res.status(404).json({ error: "not_found" }));

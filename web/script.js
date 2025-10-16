@@ -352,6 +352,18 @@ document.getElementById("createChargeForm").addEventListener("submit", async (e)
   await loadCharges();
 });
 
+// Disparar o job de cobranças manualmente
+document.getElementById("btnRunChargesNow")?.addEventListener("click", async () => {
+  try {
+    // usa o helper api() que já manda o token
+    await api("/tasks/run-charges", { method: "POST" });
+    alert("Cobranças geradas (veja a lista e os logs).");
+    await loadCharges();
+  } catch (e) {
+    alert("Falha ao disparar cobranças: " + e.message);
+  }
+});
+
 // =======================
 // 🔹 Auto-load após login (com retry curto)
 // =======================
