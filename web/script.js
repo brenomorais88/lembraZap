@@ -22,7 +22,6 @@ function ensureAuth(timeoutMs = 3000) {
 
   const auth = await ensureAuth();
 
-  // Observa mudanças de login
   onAuthStateChanged(auth, (user) => {
     const authStatus = document.getElementById("authStatus");
     const sendBtn = document.getElementById("send");
@@ -36,7 +35,6 @@ function ensureAuth(timeoutMs = 3000) {
     }
   });
 
-  // Logout
   document.getElementById("logout").addEventListener("click", async () => {
     try {
       await signOut(auth);
@@ -62,7 +60,6 @@ document.getElementById("signup").addEventListener("click", async () => {
 
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
 
-    // Salva no Firestore
     const uid = cred.user.uid;
     await window.dbSet(
       window.dbDoc(window.db, "users", uid),
@@ -190,6 +187,9 @@ function renderCustomers(customers) {
       <td>${pm}</td>
       <td>${c.isPaused ? "Sim" : "Não"}</td>
       <td>
+        <button data-id="${c.id}" class="btn-id">Copiar ID</button>
+        <button data-id="${c.id}" class="btn-fill-charge">Cobrar</button>
+        <button data-id="${c.id}" class="btn-charge-today">Cobrar hoje</button>
         <button data-id="${c.id}" class="btn-pause">${c.isPaused ? "Retomar" : "Pausar"}</button>
         <button data-id="${c.id}" class="btn-edit">Editar</button>
         <button data-id="${c.id}" class="btn-del">Excluir</button>
@@ -198,7 +198,44 @@ function renderCustomers(customers) {
     tbody.appendChild(tr);
   }
 
-  // ações
+  // copiar ID
+  tbody.querySelectorAll(".btn-id").forEach((btn) => {
+    btn.onclick = async () => {
+      const id = btn.dataset.id;
+      try {
+        await navigator.clipboard.writeText(id);
+        alert("ID copiado!");
+      } catch {
+        alert("Falha ao copiar. ID: " + id);
+      }
+    };
+  });
+
+  // preencher formulário de cobrança manual
+  tbody.querySelectorAll(".btn-fill-charge").forEach((btn) => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      document.getElementById("ch_customerId").value = id;
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("ch_dueDate").value = today;
+      document.getElementById("ch_value").focus();
+    };
+  });
+
+  // cobrar direto (hoje)
+  tbody.querySelectorAll(".btn-charge-today").forEach((btn) => {
+    btn.onclick = async () => {
+      const customerId = btn.dataset.id;
+      const dueDate = new Date().toISOString().split("T")[0];
+      await api("/api/charges", {
+        method: "POST",
+        body: JSON.stringify({ customerId, dueDate }),
+      });
+      await loadCharges();
+    };
+  });
+
+  // pausar/retomar
   tbody.querySelectorAll(".btn-pause").forEach((btn) => {
     btn.onclick = async () => {
       const id = btn.getAttribute("data-id");
@@ -211,6 +248,7 @@ function renderCustomers(customers) {
     };
   });
 
+  // editar
   tbody.querySelectorAll(".btn-edit").forEach((btn) => {
     btn.onclick = async () => {
       const id = btn.getAttribute("data-id");
@@ -225,6 +263,7 @@ function renderCustomers(customers) {
     };
   });
 
+  // excluir
   tbody.querySelectorAll(".btn-del").forEach((btn) => {
     btn.onclick = async () => {
       const id = btn.getAttribute("data-id");
@@ -261,10 +300,16 @@ document.getElementById("createCustomerForm").addEventListener("submit", async (
     };
   }
 
-  await api("/api/customers", {
+  const created = await api("/api/customers", {
     method: "POST",
     body: JSON.stringify({ name, phone, billingDay, value, paymentMethod }),
   });
+
+  // opcional: já preencher o form de cobrança com o novo ID
+  if (created?.id) {
+    document.getElementById("ch_customerId").value = created.id;
+    document.getElementById("ch_dueDate").value = new Date().toISOString().split("T")[0];
+  }
 
   e.target.reset();
   await loadCustomers();
@@ -326,23 +371,3 @@ document.getElementById("createChargeForm").addEventListener("submit", async (e)
   e.target.reset();
   await loadCharges();
 });
-
-// =======================
-// 🔹 Auto-load após login
-// =======================
-(async function autoLoadAfterLogin(){
-  const { onAuthStateChanged } =
-    await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js");
-
-  const auth = await ensureAuth();
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      await loadCustomers();
-      await loadCharges();
-    } else {
-      document.querySelector("#customersTable tbody").innerHTML = "";
-      document.querySelector("#chargesTable tbody").innerHTML = "";
-    }
-  });
-})();
-

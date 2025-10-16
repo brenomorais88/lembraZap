@@ -27,9 +27,11 @@ router.post("/", async (req, res) => {
     phone,
     billingDay: Number(billingDay),
     value: Number(value),
-    paymentMethod, // { type: 'pix', key: '...' } ou { type:'bank', agency:'', account:'' }
+    paymentMethod,
     isPaused: false,
   });
+
+  // retorna { id } para o front já usar em cobranças
   res.json(created);
 });
 
